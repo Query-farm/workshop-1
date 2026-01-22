@@ -1,0 +1,18 @@
+# name: test/sql/workshop.test
+# description: test workshop extension
+# group: [sql]
+
+# Before we load the extension, this will fail
+statement error
+SELECT workshop('Sam');
+----
+Catalog Error: Scalar Function with name workshop does not exist!
+
+# Require statement will ensure this test is run with this extension loaded
+require workshop
+
+# Confirm the extension works
+query I
+SELECT workshop('Sam');
+----
+Workshop Sam 🐥

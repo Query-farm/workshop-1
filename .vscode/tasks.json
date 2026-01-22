@@ -1,0 +1,83 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build Release",
+      "type": "shell",
+      "command": "make",
+      "args": ["release"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$gcc",
+      "detail": "Build extension in release mode"
+    },
+    {
+      "label": "Build Debug",
+      "type": "shell",
+      "command": "make",
+      "args": ["debug"],
+      "group": "build",
+      "problemMatcher": "$gcc",
+      "detail": "Build extension in debug mode"
+    },
+    {
+      "label": "Build Release (Ninja)",
+      "type": "shell",
+      "command": "make",
+      "args": ["release"],
+      "options": {
+        "env": {
+          "GEN": "ninja"
+        }
+      },
+      "group": "build",
+      "problemMatcher": "$gcc",
+      "detail": "Fast release build with Ninja"
+    },
+    {
+      "label": "Build Debug (Ninja)",
+      "type": "shell",
+      "command": "make",
+      "args": ["debug"],
+      "options": {
+        "env": {
+          "GEN": "ninja"
+        }
+      },
+      "group": "build",
+      "problemMatcher": "$gcc",
+      "detail": "Fast debug build with Ninja"
+    },
+    {
+      "label": "Run Tests",
+      "type": "shell",
+      "command": "make",
+      "args": ["test"],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "detail": "Run tests (release)"
+    },
+    {
+      "label": "Run Tests (Debug)",
+      "type": "shell",
+      "command": "make",
+      "args": ["test_debug"],
+      "group": "test",
+      "problemMatcher": [],
+      "detail": "Run tests (debug)"
+    },
+    {
+      "label": "Clean",
+      "type": "shell",
+      "command": "make",
+      "args": ["clean"],
+      "problemMatcher": [],
+      "detail": "Clean build artifacts"
+    }
+  ]
+}
