@@ -4,15 +4,39 @@
 
 # Before we load the extension, this will fail
 statement error
-SELECT workshop('Sam');
+SELECT easter(2024);
 ----
-Catalog Error: Scalar Function with name workshop does not exist!
+Catalog Error: Scalar Function with name easter does not exist!
 
 # Require statement will ensure this test is run with this extension loaded
 require workshop
 
 # Confirm the extension works
 query I
-SELECT workshop('Sam');
+SELECT easter(2026);
 ----
-Workshop Sam 🐥
+2026-04-05
+
+query II
+SELECT year, easter(year) FROM (SELECT * as year FROM range(1980, 2000));
+----
+1980	1980-04-06
+1981	1981-04-19
+1982	1982-04-11
+1983	1983-04-03
+1984	1984-04-22
+1985	1985-04-07
+1986	1986-03-30
+1987	1987-04-19
+1988	1988-04-03
+1989	1989-03-26
+1990	1990-04-15
+1991	1991-03-31
+1992	1992-04-19
+1993	1993-04-11
+1994	1994-04-03
+1995	1995-04-16
+1996	1996-04-07
+1997	1997-03-30
+1998	1998-04-12
+1999	1999-04-04
