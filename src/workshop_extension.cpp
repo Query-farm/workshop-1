@@ -4,6 +4,7 @@
 #include "duckdb.hpp"
 #include "duckdb/common/exception.hpp"
 #include "duckdb/function/scalar_function.hpp"
+#include "duckdb/catalog/catalog_entry/scalar_function_catalog_entry.hpp"
 #include <duckdb/parser/parsed_data/create_scalar_function_info.hpp>
 
 namespace duckdb {
@@ -35,7 +36,18 @@ void EasterScalarFunc(DataChunk &args, ExpressionState &state, Vector &result) {
 }
 
 static void LoadInternal(ExtensionLoader &loader) {
-	loader.RegisterFunction(ScalarFunction("easter", {LogicalType::BIGINT}, LogicalType::DATE, EasterScalarFunc));
+	ScalarFunction easter_func("easter", {LogicalType::BIGINT}, LogicalType::DATE, EasterScalarFunc);
+
+	CreateScalarFunctionInfo easter_info(easter_func);
+	FunctionDescription easter_desc;
+	easter_desc.description =
+	    "Calculates the date of Easter Sunday for a given year using the Anonymous Gregorian algorithm. "
+	    "Valid for years between 1583 and 4098 (Gregorian calendar era).";
+	easter_desc.examples = {"easter(2025)"};
+	easter_desc.categories = {"date"};
+	easter_desc.parameter_names = {"year"};
+	easter_info.descriptions.push_back(easter_desc);
+	loader.RegisterFunction(easter_info);
 }
 
 void WorkshopExtension::Load(ExtensionLoader &loader) {
