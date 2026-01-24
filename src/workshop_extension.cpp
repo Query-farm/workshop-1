@@ -35,6 +35,67 @@ void EasterScalarFunc(DataChunk &args, ExpressionState &state, Vector &result) {
 	});
 }
 
+struct IncrementalSequenceBindData : public FunctionData {
+	const int64_t start_value, end_value;
+
+	IncrementalSequenceBindData(int64_t start_value_p, int64_t end_value_p)
+	    : start_value(start_value_p), end_value(end_value_p) {
+	}
+	unique_ptr<FunctionData> Copy() const override {
+		return make_uniq<IncrementalSequenceBindData>(start_value, end_value);
+	}
+	bool Equals(const FunctionData &other_p) const override {
+		const auto &other = other_p.Cast<IncrementalSequenceBindData>();
+		return start_value == other.start_value && end_value == other.end_value;
+	}
+};
+
+unique_ptr<FunctionData> IncrementalSequenceFuncBind(ClientContext &context, TableFunctionBindInput &input,
+                                                     vector<LogicalType> &return_types, vector<string> &names) {
+	int64_t start_value = input.inputs[0].GetValue<int64_t>();
+	int64_t end_value = input.inputs[1].GetValue<int64_t>();
+
+	if (end_value < start_value) {
+		throw InvalidInputException("End value must be greater than or equal to start value");
+	}
+
+	names.push_back("sequence_value");
+	return_types.push_back(LogicalType::BIGINT);
+	return make_uniq<IncrementalSequenceBindData>(start_value, end_value);
+}
+
+struct IncrementalSequenceGlobalState : public GlobalTableFunctionState {
+	int64_t current_value;
+
+	idx_t MaxThreads() const override {
+		return 1;
+	}
+};
+
+static unique_ptr<GlobalTableFunctionState> IncrementalSequenceGlobalInit(ClientContext &context,
+                                                                          TableFunctionInitInput &input) {
+	auto &bind_data = input.bind_data->Cast<IncrementalSequenceBindData>();
+	auto state = make_uniq<IncrementalSequenceGlobalState>();
+	state->current_value = bind_data.start_value;
+	return state;
+}
+
+void IncrementalSequenceFunc(ClientContext &context, TableFunctionInput &data, DataChunk &output) {
+	auto &bind_data = data.bind_data->Cast<IncrementalSequenceBindData>();
+	auto &global_state = data.global_state->Cast<IncrementalSequenceGlobalState>();
+
+	if (global_state.current_value > bind_data.end_value) {
+		output.SetCardinality(0);
+		return;
+	}
+
+	int64_t remaining = bind_data.end_value - global_state.current_value;
+	idx_t row_count = MinValue<idx_t>(remaining, STANDARD_VECTOR_SIZE);
+	output.SetCardinality(row_count);
+	output.data[0].Sequence(global_state.current_value, 1, row_count);
+	global_state.current_value += row_count;
+}
+
 static void LoadInternal(ExtensionLoader &loader) {
 	ScalarFunction easter_func("easter", {LogicalType::BIGINT}, LogicalType::DATE, EasterScalarFunc);
 
@@ -48,6 +109,11 @@ static void LoadInternal(ExtensionLoader &loader) {
 	easter_desc.parameter_names = {"year"};
 	easter_info.descriptions.push_back(easter_desc);
 	loader.RegisterFunction(easter_info);
+
+	TableFunction incremental_sequence_func("incremental_sequence", {LogicalType::BIGINT, LogicalType::BIGINT},
+	                                        IncrementalSequenceFunc, IncrementalSequenceFuncBind,
+	                                        IncrementalSequenceGlobalInit);
+	loader.RegisterFunction(incremental_sequence_func);
 }
 
 void WorkshopExtension::Load(ExtensionLoader &loader) {
