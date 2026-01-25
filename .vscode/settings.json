@@ -29,7 +29,6 @@
   "editor.formatOnSave": true,
   "search.exclude": {
     "**/build": true,
-    "**/duckdb": true,
     "**/vcpkg": true,
     "**/vcpkg_installed": true
   },
